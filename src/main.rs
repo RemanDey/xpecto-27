@@ -7,8 +7,8 @@ use axum::{
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, SqlitePool};
-use std::{net::SocketAddr, sync::Arc};
+use sqlx::{sqlite::SqliteConnectOptions, FromRow, SqlitePool};
+use std::{net::SocketAddr, str::FromStr, sync::Arc};
 use tera::{Context, Tera};
 use tower_http::services::ServeDir;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -59,7 +59,9 @@ async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
 
     let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:blog.db".to_string());
-    let pool = SqlitePool::connect(&database_url).await?;
+    let options = SqliteConnectOptions::from_str(&database_url)?
+        .create_if_missing(true);
+    let pool = SqlitePool::connect_with(options).await?;
 
     sqlx::migrate!("./migrations").run(&pool).await?;
 
