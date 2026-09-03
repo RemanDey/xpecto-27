@@ -77,28 +77,45 @@
             transition: opacity 0.8s ease, transform 0.8s ease;
         }
         .scroll-reveal.visible { opacity: 1; transform: translateY(0); }
+        /* --- Mobile optimizations --- */
+        html { -webkit-text-size-adjust: 100%; }
+        body { overflow-x: clip; }
+        img, svg, video, canvas { max-width: 100%; }
+        a, button { -webkit-tap-highlight-color: transparent; }
+        /* Collapsible mobile menu animation */
+        #mobile-menu { transition: opacity 0.25s ease, transform 0.25s ease; transform-origin: top; }
+        #mobile-menu.menu-hidden { opacity: 0; transform: scaleY(0.95) translateY(-4px); pointer-events: none; }
+        #mobile-menu.menu-open { opacity: 1; transform: none; pointer-events: auto; }
+        /* Roomy touch targets on coarse pointers */
+        @media (pointer: coarse) {
+            #mobile-menu a, #mobile-menu button { min-height: 44px; display: flex; align-items: center; }
+        }
         @media (prefers-reduced-motion: reduce) {
             .scroll-reveal { opacity: 1; transform: none; transition: none; }
             .floating-orb, .pulse-glow { animation: none; }
+            #mobile-menu { transition: none; }
+        }
+        @media (max-width: 640px) {
+            .floating-orb { opacity: 0.7; }
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col text-gray-200">
+<body class="min-h-screen flex flex-col text-gray-200 overflow-x-hidden">
     <!-- Dynamic particle background (canvas painted by JS below) -->
     <canvas id="particles" aria-hidden="true"></canvas>
     <div class="nebula" aria-hidden="true"></div>
 
     <nav class="fixed top-0 left-0 right-0 z-50 bg-[#0a0c1a]/80 backdrop-blur-md border-b border-white/10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="/" class="flex items-center space-x-2">
-                        <div class="w-10 h-10 rounded-xl hero-gradient flex items-center justify-center pulse-glow">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center min-w-0">
+                    <a href="/" class="flex items-center space-x-2 min-w-0">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl hero-gradient flex items-center justify-center pulse-glow flex-shrink-0">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                             </svg>
                         </div>
-                        <span class="font-display text-xl font-bold text-white">EXPECTO<span class="text-emerald-400">-27</span></span>
+                        <span class="font-display text-lg sm:text-xl font-bold text-white truncate">EXPECTO<span class="text-emerald-400">-27</span></span>
                     </a>
                 </div>
                 <div class="hidden md:flex items-center space-x-8">
@@ -108,20 +125,36 @@
                     <a href="/about" class="nav-link {% if active_page | default(value='') == 'about' %}active{% endif %} text-gray-300 hover:text-white font-medium transition-colors py-2">About</a>
                     <a href="/posts" class="nav-link {% if active_page | default(value='') == 'blog' %}active{% endif %} text-gray-300 hover:text-white font-medium transition-colors py-2">Announcements</a>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <a href="/competitions" class="hidden sm:block bg-gradient-to-r from-emerald-600 to-green-600 text-white px-6 py-2.5 rounded-lg font-medium hover:from-emerald-500 hover:to-green-500 transition-all shadow-lg shadow-emerald-500/25">
+                <div class="flex items-center gap-2 sm:gap-4">
+                    <a href="/competitions" class="hidden sm:block bg-gradient-to-r from-emerald-600 to-green-600 text-white px-4 lg:px-6 py-2 sm:py-2.5 rounded-lg font-medium text-sm sm:text-base hover:from-emerald-500 hover:to-green-500 transition-all shadow-lg shadow-emerald-500/25 whitespace-nowrap">
                         Register Now
                     </a>
+                    <!-- Hamburger button (mobile only) -->
+                    <button id="menu-btn" type="button"
+                        class="md:hidden inline-flex items-center justify-center w-11 h-11 rounded-lg text-gray-300 hover:text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition-colors"
+                        aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+                        <svg id="icon-open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                        <svg id="icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>
-        <!-- Mobile nav row -->
-        <div class="md:hidden border-t border-white/10 px-4 py-2 flex gap-5 overflow-x-auto text-sm">
-            <a href="/" class="text-gray-300 hover:text-white py-1">Home</a>
-            <a href="/competitions" class="text-gray-300 hover:text-white py-1">Competitions</a>
-            <a href="/workshops" class="text-gray-300 hover:text-white py-1">Workshops</a>
-            <a href="/about" class="text-gray-300 hover:text-white py-1">About</a>
-            <a href="/posts" class="text-gray-300 hover:text-white py-1">Announcements</a>
+        <!-- Mobile hamburger panel -->
+        <div id="mobile-menu" class="md:hidden menu-hidden hidden border-t border-white/10 bg-[#0a0c1a]/95 backdrop-blur-md">
+            <div class="px-4 pt-2 pb-4 space-y-1 text-base">
+                <a href="/" class="block px-3 py-3 rounded-lg text-gray-200 hover:text-white hover:bg-white/5 font-medium transition-colors">Home</a>
+                <a href="/competitions" class="block px-3 py-3 rounded-lg text-gray-200 hover:text-white hover:bg-white/5 font-medium transition-colors">Competitions</a>
+                <a href="/workshops" class="block px-3 py-3 rounded-lg text-gray-200 hover:text-white hover:bg-white/5 font-medium transition-colors">Workshops</a>
+                <a href="/about" class="block px-3 py-3 rounded-lg text-gray-200 hover:text-white hover:bg-white/5 font-medium transition-colors">About</a>
+                <a href="/posts" class="block px-3 py-3 rounded-lg text-gray-200 hover:text-white hover:bg-white/5 font-medium transition-colors">Announcements</a>
+                <a href="/competitions" class="sm:hidden mt-2 block text-center bg-gradient-to-r from-emerald-600 to-green-600 text-white px-6 py-3 rounded-lg font-medium hover:from-emerald-500 hover:to-green-500 transition-all shadow-lg shadow-emerald-500/25">
+                    Register Now
+                </a>
+            </div>
         </div>
     </nav>
 
@@ -138,8 +171,8 @@
     </main>
 
     <footer class="relative z-10 bg-black/40 border-t border-white/10 backdrop-blur-md text-gray-300">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
                 <div>
                     <div class="flex items-center space-x-2 mb-4">
                         <div class="w-10 h-10 rounded-xl hero-gradient flex items-center justify-center">
@@ -191,6 +224,54 @@
     </footer>
 
     <script>
+        // ---- Mobile hamburger menu ----
+        (function () {
+            const btn = document.getElementById('menu-btn');
+            const menu = document.getElementById('mobile-menu');
+            const iconOpen = document.getElementById('icon-open');
+            const iconClose = document.getElementById('icon-close');
+            if (!btn || !menu) return;
+
+            function setOpen(open) {
+                btn.setAttribute('aria-expanded', String(open));
+                btn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+                iconOpen.classList.toggle('hidden', open);
+                iconClose.classList.toggle('hidden', !open);
+                if (open) {
+                    menu.classList.remove('hidden');
+                    // force reflow so the transition plays
+                    void menu.offsetWidth;
+                    menu.classList.remove('menu-hidden');
+                    menu.classList.add('menu-open');
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    menu.classList.remove('menu-open');
+                    menu.classList.add('menu-hidden');
+                    document.body.style.overflow = '';
+                    window.setTimeout(() => {
+                        if (btn.getAttribute('aria-expanded') === 'false') menu.classList.add('hidden');
+                    }, 250);
+                }
+            }
+
+            btn.addEventListener('click', () => {
+                setOpen(btn.getAttribute('aria-expanded') !== 'true');
+            });
+            // Close when a link is tapped
+            menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setOpen(false)));
+            // Close on Escape
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && btn.getAttribute('aria-expanded') === 'true') {
+                    setOpen(false);
+                    btn.focus();
+                }
+            });
+            // Auto-close if resized up to desktop
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 768 && btn.getAttribute('aria-expanded') === 'true') setOpen(false);
+            });
+        })();
+
         // Scroll reveal animation
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -243,8 +324,13 @@
             }
 
             function seed() {
-                // Density-based count so large screens stay lively, small stay cheap
-                const count = Math.min(160, Math.max(50, Math.floor((W * H) / 14000)));
+                // Density-based count so large screens stay lively, small stay cheap.
+                // Cap harder on phones for battery/perf.
+                const isSmall = Math.min(W, H) < 640 || W < 768;
+                const divisor = isSmall ? 22000 : 14000;
+                const max = isSmall ? 70 : 160;
+                const min = isSmall ? 25 : 50;
+                const count = Math.min(max, Math.max(min, Math.floor((W * H) / divisor)));
                 parts = Array.from({ length: count }, () => {
                     const c = PALETTE[Math.floor(Math.random() * PALETTE.length)];
                     const speed = 0.15 + Math.random() * 0.55;
@@ -270,7 +356,9 @@
             function tick() {
                 ctx.clearRect(0, 0, W, H);
 
-                // Faint connecting lines between close particles
+                // Skip faint connecting lines on small screens (O(n^2) cost)
+                const showLines = W >= 768;
+                if (showLines) {
                 for (let i = 0; i < parts.length; i++) {
                     for (let j = i + 1; j < parts.length; j++) {
                         const dx = parts[i].x - parts[j].x;
@@ -286,6 +374,7 @@
                             ctx.stroke();
                         }
                     }
+                }
                 }
 
                 for (const p of parts) {
